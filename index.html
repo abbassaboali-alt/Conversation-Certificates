@@ -131,6 +131,84 @@ const db = firebase.firestore();
 let records = [];                 // كل السجلات التي تم عرضها
 let chartMap = {};                // لتدمير الرسوم عند البحث من جديد
 
+/* ================= STUDENT AUTO LOGIN =================
+   نفس آلية الكود الثاني:
+   - يعتمد على studentID / student_iqama
+   - يتحقق من studentLoginDate
+   - عند فتح الصفحة يضع الهوية تلقائياً ويبحث مباشرة
+   - إذا لم توجد جلسة طالب صالحة يرجع إلى صفحة تسجيل الدخول
+======================================================= */
+function clearStudentLogin(){
+  localStorage.removeItem("studentID");
+  localStorage.removeItem("student_iqama");
+  localStorage.removeItem("studentLoginDate");
+  sessionStorage.clear();
+}
+
+function goLoginPage(){
+  clearStudentLogin();
+
+  if(window.location.search){
+    history.replaceState(null, "", window.location.pathname);
+  }
+
+  window.top.location.replace(
+    "https://www.prudle-education.com/log-in-out"
+  );
+}
+
+function hasValidStudentLogin(){
+  const id =
+    localStorage.getItem("studentID") ||
+    localStorage.getItem("student_iqama");
+
+  const last =
+    localStorage.getItem("studentLoginDate");
+
+  const today =
+    new Date().toDateString();
+
+  return !!id && last === today;
+}
+
+window.addEventListener("pageshow", function(){
+
+  if(localStorage.getItem("studentLoggedOut") === "1"){
+    goLoginPage();
+    return;
+  }
+
+  if(!hasValidStudentLogin()){
+    goLoginPage();
+    return;
+  }
+
+});
+
+window.addEventListener("load", function(){
+
+  if(!hasValidStudentLogin()){
+    return;
+  }
+
+  const id =
+    localStorage.getItem("studentID") ||
+    localStorage.getItem("student_iqama");
+
+  const input =
+    document.getElementById("iqamaInput");
+
+  if(!input || !id){
+    return;
+  }
+
+  input.value = id;
+
+  // البحث التلقائي بدون أن يكتب الطالب الهوية مرة أخرى
+  searchStudent();
+
+});
+
 /* ================= HELPERS ================= */
 function score(v){
   if(v==="Excellent") return 4;
